@@ -4,16 +4,18 @@ export interface IUser extends mongoose.Document {
   email: string;
   fullName: string;
   phoneNumber: string;
+  country: string;
 
   isOnboarded: boolean;
 }
 
 const userSchema = new mongoose.Schema<IUser>(
   {
-    email: { type: String, required: true, unique: true },
-    fullName: { type: String, required: true },
-    phoneNumber: { type: String, required: true },
-    isOnboarded: { type: Boolean, default: false },
+    email: { type: String, required: true },
+    fullName: { type: String },
+    phoneNumber: { type: String },
+    isOnboarded: { type: Boolean },
+    country: { type: String },
   },
   {
     timestamps: true,

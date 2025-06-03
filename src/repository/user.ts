@@ -8,7 +8,7 @@ class UserRepository {
     }
 
     async getUserByEmail(email: string) {
-        const user = await User.find({ email })
+        const user = await User.findOne({ email });
         return user;
     }
 
@@ -20,6 +20,7 @@ class UserRepository {
         const user = await User.findByIdAndUpdate(userId, updateData, {
             new: true,
         })
+        return user;
     }
 }
 

@@ -3,8 +3,10 @@ import express, { Request, Response } from "express";
 import bodyParser from "body-parser";
 import helmet from "helmet";
 import cors from "cors";
+import userRoutes from "./routes/user";
 import { connectToDB } from "./db";
 import config from "./config";
+import errHandler from "./errHandler";
 
 declare module "express-serve-static-core" {
   interface Request {
@@ -17,12 +19,14 @@ declare module "express-serve-static-core" {
   }
 }
 
-
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(cors());
+
+app.use("/api/v1/user", userRoutes);
+app.use(errHandler as any);
 
 app.use("*splat", (req: Request, res: Response) => {
   res.status(404).send("Route Not Found");
