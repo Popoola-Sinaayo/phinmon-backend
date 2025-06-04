@@ -136,9 +136,29 @@ class UserService {
     }
   }
 
-  async handleWebhookEvent(event: any) {
+  async exchangeCodeForToken(userId: string, code: string) {
     try {
-      console.log("Received webhook event:", event);
+      const user = await this.userRepository.getUserById(userId);
+      if (!user) {
+        throw new BaseError("User not found", 404);
+      }
+      const response = await monoInstance.post("/v2/accounts/auth", {
+        code,
+      });
+      await this.userRepository.updateUser(userId, {});
+      return response.data;
+    } catch (error) {
+      console.error("Error in exchangeCodeForToken:", error);
+      throw new BaseError("Failed to exchange code for token", 500);
+    }
+  }
+
+  async handleWebhookEvent(body: any) {
+    try {
+      console.log("Received webhook event:", body);
+      const { event, data } = body;
+      if (event === "mono.events.account_updated") {
+      }
     } catch (error) {
       console.error("Error in handleWebhookEvent:", error);
       throw new BaseError("Failed to handle webhook event", 500);
