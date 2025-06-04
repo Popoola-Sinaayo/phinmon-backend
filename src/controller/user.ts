@@ -49,3 +49,52 @@ export const updateOnboardingInformation: (
     next(error);
   }
 };
+
+  export const getAllInstitution: (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => void = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const institutions = await userService.getAllInstitutions();
+      return res.status(200).json(constructResponseBody(institutions));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  export const initiateConnection: (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => void = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { institutionId, selectedAuthMethod } = req.body;
+      const connectionData = await userService.initiateConnection(
+        req.user.id,
+        institutionId,
+        selectedAuthMethod
+      );
+      return res.status(200).json(constructResponseBody(connectionData));
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  export const processWebhookEvent: (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => void = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const event = req.body;
+      await userService.handleWebhookEvent(event);
+      return res
+        .status(200)
+        .json(
+          constructResponseBody({ message: "Webhook processed successfully" })
+        );
+    } catch (error) {
+      next(error);
+    }
+  };

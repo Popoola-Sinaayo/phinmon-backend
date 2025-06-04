@@ -6,6 +6,7 @@ import sendMail from "../sendMail";
 import jwt from "jsonwebtoken";
 import { otpTemplate } from "../utils/mailTemplates";
 import { IUser } from "../model/user";
+import { monoInstance } from "../external/request";
 
 class UserService {
   private userRepository: UserRepository;
@@ -93,6 +94,54 @@ class UserService {
     } catch (error) {
       console.error("Error in updateOnboardingInformation:", error);
       throw new BaseError("Failed to update onboarding information", 500);
+    }
+  }
+
+  async initiateConnection(
+    userId: string,
+    institutionId: string,
+    selectedAuthMethod: string
+  ) {
+    try {
+      const user = await this.userRepository.getUserById(userId);
+      if (!user) {
+        throw new BaseError("User not found", 404);
+      }
+      const response = await monoInstance.post("/v2/accounts/initiate", {
+        customer: {
+          email: user.email,
+          name: user.fullName,
+        },
+        scope: "auth",
+        institution: {
+          id: institutionId,
+          auth_method: selectedAuthMethod,
+        },
+        redirect_url: "https://example.com/redirect",
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error in initiateConnection:", error);
+      throw new BaseError("Failed to initiate connection", 500);
+    }
+  }
+
+  async getAllInstitutions() {
+    try {
+      const response = await monoInstance.get("/v3/institutions");
+      return response.data;
+    } catch (error) {
+      console.error("Error in getListOfInstitutions:", error);
+      throw new BaseError("Failed to fetch institutions", 500);
+    }
+  }
+
+  async handleWebhookEvent(event: any) {
+    try {
+      console.log("Received webhook event:", event);
+    } catch (error) {
+      console.error("Error in handleWebhookEvent:", error);
+      throw new BaseError("Failed to handle webhook event", 500);
     }
   }
 }
