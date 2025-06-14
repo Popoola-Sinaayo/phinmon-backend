@@ -3,6 +3,7 @@ import {
   authenticateUser,
   getAllInstitution,
   initiateConnection,
+  initiatePlaidLinkToken,
   processWebhookEvent,
   updateOnboardingInformation,
   verifyOtp,
@@ -16,6 +17,11 @@ router.post("/verify-otp", verifyOtp);
 router.post("/onboarding", authenticateUserToken, updateOnboardingInformation);
 router.get("/institutions", authenticateUserToken, getAllInstitution);
 router.post("/initiate-connection", authenticateUserToken, initiateConnection);
+router.get(
+  "/initiate-plaid-connection",
+  authenticateUserToken,
+  initiatePlaidLinkToken
+);
 router.post("/webhook", processWebhookEvent);
 
 

@@ -6,7 +6,8 @@ import sendMail from "../sendMail";
 import jwt from "jsonwebtoken";
 import { otpTemplate } from "../utils/mailTemplates";
 import { IUser } from "../model/user";
-import { monoInstance } from "../external/request";
+import { monoInstance, plaidInstance } from "../external/request";
+import { CountryCode, Products } from "plaid";
 
 class UserService {
   private userRepository: UserRepository;
@@ -150,6 +151,46 @@ class UserService {
     } catch (error) {
       console.error("Error in exchangeCodeForToken:", error);
       throw new BaseError("Failed to exchange code for token", 500);
+    }
+  }
+
+  async initiatePlaidLinkToken(userId: string) {
+    try {
+      const user = await this.userRepository.getUserById(userId);
+      // const responseInst = await plaidInstance.institutionsGet({
+      //   count: 10,
+      //   offset: 0,
+      //   country_codes: [CountryCode.Us],
+      //   options: {
+      //     products: [Products.Auth],
+      //   },
+      // });
+      // console.log("Institutions:", responseInst.data.institutions);
+      const response = await plaidInstance.linkTokenCreate({
+        user: {
+          client_user_id: userId,
+          // email_address: user?.email,
+
+          // phone_number: "+12025550143", // Placeholder, replace with actual phone number if available
+        },
+        client_name: "Phinmon",
+        products: [Products.Auth],
+        country_codes: [CountryCode.Us],
+        language: "en",
+        // institution_id: "ins_130958",
+        // institution_id: "ins_109508",
+
+        hosted_link: {
+          completion_redirect_uri: "https://example.com/redirect",
+          // delivery_method: "email" as any,
+          is_mobile_app: false,
+        },
+      });
+      console.log(response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error in initiatePlaidLinkToken:", error);
+      throw new BaseError("Failed to initiate Plaid link token", 500);
     }
   }
 
