@@ -115,15 +115,89 @@ export const processWebhookEvent: (
   }
 };
 
-  export const initiatePlaidLinkToken: (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => void = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const linkToken = await userService.initiatePlaidLinkToken(req.user.id);
-      return res.status(200).json(constructResponseBody(linkToken));
-    } catch (error) {
-      next(error);
-    }
-  };
+export const initiatePlaidLinkToken: (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => void = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const linkToken = await userService.initiatePlaidLinkToken(req.user.id);
+    return res.status(200).json(constructResponseBody(linkToken));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const syncRealTimeTransactions: (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => void = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const transactions = await userService.getRealTimeTransactions(req.user.id);
+    return res.status(200).json(constructResponseBody(transactions));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const syncTransactionByDate: (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => void = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { startDate, endDate } = req.body;
+    const transactions = await userService.syncTransactions(
+      req.user.id,
+      startDate,
+      endDate
+    );
+    return res.status(200).json(constructResponseBody(transactions));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllTransactions: (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => void = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const transactions = await userService.getAllTransactions(req.user.id);
+    return res.status(200).json(constructResponseBody(transactions));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updatePushNotificationToken: (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => void = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { pushNotificationToken } = req.body;
+    const updatedUser = await userService.updatePushNotificationToken(
+      req.user.id,
+      pushNotificationToken
+    );
+    return res.status(200).json(constructResponseBody(updatedUser));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getTodaysTransactions: (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => void = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const transactions = await userService.getCurrentDayTransactions(req.user.id);
+    return res.status(200).json(constructResponseBody(transactions));
+  } catch (error) {
+    next(error);
+  }
+}

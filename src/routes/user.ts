@@ -2,10 +2,15 @@ import express from 'express';
 import {
   authenticateUser,
   getAllInstitution,
+  getAllTransactions,
+  getTodaysTransactions,
   initiateConnection,
   initiatePlaidLinkToken,
   processWebhookEvent,
+  syncRealTimeTransactions,
+  syncTransactionByDate,
   updateOnboardingInformation,
+  updatePushNotificationToken,
   verifyOtp,
 } from "../controller/user";
 import { authenticateUserToken } from "../middlewares/authenticateUser";
@@ -22,6 +27,15 @@ router.get(
   authenticateUserToken,
   initiatePlaidLinkToken
 );
+router.get("/transactions", authenticateUserToken, getAllTransactions);
+router.get("/sync/realtime", authenticateUserToken, syncRealTimeTransactions);
+router.get("/sync/datetime", authenticateUserToken, syncTransactionByDate);
+router.post(
+  "/push/notifications",
+  authenticateUserToken,
+  updatePushNotificationToken
+);
+router.get("/transaction/today", authenticateUserToken, getTodaysTransactions);
 router.post("/webhook", processWebhookEvent);
 
 

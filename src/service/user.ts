@@ -9,6 +9,7 @@ import { IUser } from "../model/user";
 import { monoInstance, plaidInstance } from "../external/request";
 import { CountryCode, Products } from "plaid";
 import TransactionRepository from "../repository/transaction";
+import moment from "moment";
 
 class UserService {
   private userRepository: UserRepository;
@@ -244,7 +245,7 @@ class UserService {
     }
   }
 
-  async getTransactions(userId: string, startDate: string, endDate: string) {
+  async syncTransactions(userId: string, startDate: string, endDate: string) {
     try {
       const user = await this.userRepository.getUserById(userId);
       if (!user) {
@@ -256,14 +257,15 @@ class UserService {
       if (!startDate || !endDate) {
         throw new BaseError("Start date and end date are required", 400);
       }
-      let requestStartDate = startDate;
-      let requestEndDate = endDate;
+      let requestStartDate =
+        startDate ?? moment().startOf("month").format("DD-MM-YYYY");
+      let requestEndDate = endDate ?? moment().format("DD-MM-YYYY");
       const response = await monoInstance.get(
         `v2/accounts/${user.monoAccountId}/transactions`,
         {
           params: {
-            start_date: requestStartDate,
-            end_date: requestEndDate,
+            // start_date: requestStartDate,
+            // end_date: requestEndDate,
             paginate: false,
           },
         }
@@ -272,9 +274,16 @@ class UserService {
         `/v2/accounts/${user.monoAccountId}/balance`
       );
       console.log("Balance Response:", balanceResponse.data);
+      const newBalance = balanceResponse.data.balance || 0;
+      const currentBalance = user.balance || 0;
+      const percentChange = (newBalance - currentBalance) / currentBalance;
       await this.userRepository.updateUser(userId, {
         balance: balanceResponse.data.balance,
+        ...(currentBalance !== newBalance && {
+          currentPercent: { $inc: percentChange } as any,
+        }),
       });
+
       const transactions = response.data;
       for (const transaction of transactions) {
         const existingTransaction =
@@ -314,6 +323,54 @@ class UserService {
     } catch (error) {
       console.error("Error in getTransactions:", error);
       throw new BaseError("Failed to fetch transactions", 500);
+    }
+  }
+
+  async getAllTransactions(userId: string) {
+    try {
+      const transaction =
+        await this.transactionRepository.getTransactionForUser(userId);
+      return transaction;
+    } catch (error) {
+      console.error("Error in getAllTransactions:", error);
+      throw new BaseError("Failed to fetch all transactions", 500);
+    }
+  }
+
+  async getCurrentDayTransactions(userId: string) {
+    try {
+      const user = await this.userRepository.getUserById(userId);
+      if (!user) {
+        throw new BaseError("User not found", 404);
+      }
+      const today = moment().startOf("day").toISOString();
+      const tomorrow = moment().endOf("day").toISOString();
+      const transactions =
+        await this.transactionRepository.getTransactionByDateRange(
+          userId,
+          today,
+          tomorrow
+        );
+      return transactions;
+    } catch (error) {
+      console.error("Error in getCurrentDayTransactions:", error);
+      throw new BaseError("Failed to fetch current day transactions", 500);
+    }
+  }
+
+  async updatePushNotificationToken(userId: string, pushToken: string) {
+    try {
+      const user = await this.userRepository.getUserById(userId);
+      if (!user) {
+        throw new BaseError("User not found", 404);
+      }
+      const updatedUser = await this.userRepository.updateUser(userId, {
+        pushToken,
+      });
+      return updatedUser;
+    } catch (error) {
+      console.error("Error in updatePushNotificationToken:", error);
+      throw new BaseError("Failed to update push notification token", 500);
     }
   }
 

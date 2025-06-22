@@ -26,6 +26,18 @@ class TransactionRepository {
     const transactions = await Transaction.find({ userId });
     return transactions;
   }
+
+  async getTransactionByDateRange(
+    userId: string,
+    startDate: string,
+    endDate: string
+  ) {
+    const transactions = await Transaction.find({
+      userId,
+      date: { $gte: startDate, $lte: endDate },
+    });
+    return transactions;
+  }
 }
 
 export default TransactionRepository;

@@ -9,7 +9,7 @@ export interface ITransaction extends mongoose.Document {
   currency: string;
   description: string;
   category: string;
-  date: string;
+  date: Date;
 }
 
 const transactionSchema = new mongoose.Schema<ITransaction>(
@@ -22,7 +22,7 @@ const transactionSchema = new mongoose.Schema<ITransaction>(
     currency: { type: String, required: true },
     description: { type: String, required: true },
     category: { type: String, required: true },
-    date: { type: String, required: true },
+    date: { type: Date, required: true },
   },
   {
     timestamps: true,
