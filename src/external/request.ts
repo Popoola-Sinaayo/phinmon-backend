@@ -10,7 +10,6 @@ export const monoInstance = axios.create({
   },
 });
 
-console.log(config().PLAID_CLIENT_SECRET)
 
 const plaidConfig = new Configuration({
   basePath: PlaidEnvironments.sandbox,

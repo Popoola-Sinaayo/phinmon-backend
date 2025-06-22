@@ -6,7 +6,7 @@ export interface IUser extends mongoose.Document {
   phoneNumber: string;
   country: string;
   monoAccountId: string;
-
+  balance: number;
   isOnboarded: boolean;
 }
 
@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema<IUser>(
     isOnboarded: { type: Boolean },
     country: { type: String },
     monoAccountId: { type: String },
+    balance: { type: Number, default: 0 },
   },
   {
     timestamps: true,

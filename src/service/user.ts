@@ -8,14 +8,17 @@ import { otpTemplate } from "../utils/mailTemplates";
 import { IUser } from "../model/user";
 import { monoInstance, plaidInstance } from "../external/request";
 import { CountryCode, Products } from "plaid";
+import TransactionRepository from "../repository/transaction";
 
 class UserService {
   private userRepository: UserRepository;
   private otpRepository: OtpRepository;
+  private transactionRepository: TransactionRepository; // Assuming you have a TransactionRepository
 
   constructor() {
     this.userRepository = new UserRepository();
     this.otpRepository = new OtpRepository();
+    this.transactionRepository = new TransactionRepository(); // Initialize TransactionRepository
   }
 
   async authenticateUser(email: string): Promise<any> {
@@ -146,11 +149,171 @@ class UserService {
       const response = await monoInstance.post("/v2/accounts/auth", {
         code,
       });
-      await this.userRepository.updateUser(userId, {});
+      await this.userRepository.updateUser(userId, {
+        monoAccountId: response.data.id,
+        isOnboarded: true,
+      });
       return response.data;
     } catch (error) {
       console.error("Error in exchangeCodeForToken:", error);
       throw new BaseError("Failed to exchange code for token", 500);
+    }
+  }
+
+  async getUserByMonoAccountId(monoAccountId: string) {
+    try {
+      const user = await this.userRepository.getUserByMonoAccountId(
+        monoAccountId
+      );
+      if (!user) {
+        throw new BaseError("User not found", 404);
+      }
+      return user;
+    } catch (error) {
+      console.error("Error in getUserByMonoAccountId:", error);
+      throw new BaseError("Failed to fetch user by Mono account ID", 500);
+    }
+  }
+
+  async getRealTimeTransactions(userId: string) {
+    try {
+      const user = await this.userRepository.getUserById(userId);
+      if (!user) {
+        throw new BaseError("User not found", 404);
+      }
+      if (!user.monoAccountId) {
+        throw new BaseError("User has not completed onboarding", 400);
+      }
+      const response = await monoInstance.get(
+        `v2/accounts/${user.monoAccountId}/transactions`,
+        {
+          params: {
+            paginate: false,
+          },
+          headers: {
+            "x-realtime": true,
+          },
+        }
+      );
+      // const balanceResponse = await monoInstance.get()
+      const transactions = response.data;
+      const newTransactions = [];
+      for (const transaction of transactions) {
+        const existingTransaction =
+          await this.transactionRepository.getTransactionByTransactionId(
+            transaction.id
+          );
+        if (!existingTransaction) {
+          await this.transactionRepository.createTransaction({
+            transactionId: transaction.id,
+            type: transaction.type,
+            userId: user._id as string,
+            amount: transaction.amount,
+            currency: transaction.currency,
+            description: transaction.narration,
+            category: transaction.category,
+            date: transaction.date,
+          });
+        } else {
+          const newTransaction =
+            await this.transactionRepository.updateTransactionByTransactionId(
+              transaction.id,
+              {
+                type: transaction.type,
+                amount: transaction.amount,
+                currency: transaction.currency,
+                description: transaction.narration,
+                category: transaction.category,
+                date: transaction.date,
+              }
+            );
+          newTransactions.push(newTransaction);
+        }
+      }
+      const userTransactions =
+        await this.transactionRepository.getTransactionForUser(
+          user._id as string
+        );
+      return {
+        transactions: userTransactions,
+        newTransactions: newTransactions,
+      };
+    } catch (error) {
+      console.error("Error in getRealTimeTransactions:", error);
+      throw new BaseError("Failed to fetch real-time transactions", 500);
+    }
+  }
+
+  async getTransactions(userId: string, startDate: string, endDate: string) {
+    try {
+      const user = await this.userRepository.getUserById(userId);
+      if (!user) {
+        throw new BaseError("User not found", 404);
+      }
+      if (!user.monoAccountId) {
+        throw new BaseError("User has not completed onboarding", 400);
+      }
+      if (!startDate || !endDate) {
+        throw new BaseError("Start date and end date are required", 400);
+      }
+      let requestStartDate = startDate;
+      let requestEndDate = endDate;
+      const response = await monoInstance.get(
+        `v2/accounts/${user.monoAccountId}/transactions`,
+        {
+          params: {
+            start_date: requestStartDate,
+            end_date: requestEndDate,
+            paginate: false,
+          },
+        }
+      );
+      const balanceResponse = await monoInstance.get(
+        `/v2/accounts/${user.monoAccountId}/balance`
+      );
+      console.log("Balance Response:", balanceResponse.data);
+      await this.userRepository.updateUser(userId, {
+        balance: balanceResponse.data.balance,
+      });
+      const transactions = response.data;
+      for (const transaction of transactions) {
+        const existingTransaction =
+          await this.transactionRepository.getTransactionByTransactionId(
+            transaction.id
+          );
+        if (!existingTransaction) {
+          await this.transactionRepository.createTransaction({
+            transactionId: transaction.id,
+            type: transaction.type,
+            userId: user._id as string,
+            amount: transaction.amount,
+            currency: transaction.currency,
+            description: transaction.narration,
+            category: transaction.category,
+            date: transaction.date,
+          });
+        } else {
+          await this.transactionRepository.updateTransactionByTransactionId(
+            transaction.id,
+            {
+              type: transaction.type,
+              amount: transaction.amount,
+              currency: transaction.currency,
+              description: transaction.narration,
+              category: transaction.category,
+              date: transaction.date,
+            }
+          );
+        }
+      }
+      const userTransactions =
+        await this.transactionRepository.getTransactionForUser(
+          user._id as string
+        );
+      return userTransactions;
+    } catch (error) {
+      console.error("Error in getTransactions:", error);
+      throw new BaseError("Failed to fetch transactions", 500);
     }
   }
 
