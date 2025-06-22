@@ -10,6 +10,7 @@ import { monoInstance, plaidInstance } from "../external/request";
 import { CountryCode, Products } from "plaid";
 import TransactionRepository from "../repository/transaction";
 import moment from "moment";
+import { getSpendingAdvice } from "../utils/aiAnalyzer";
 
 class UserService {
   private userRepository: UserRepository;
@@ -411,6 +412,31 @@ class UserService {
     } catch (error) {
       console.error("Error in initiatePlaidLinkToken:", error);
       throw new BaseError("Failed to initiate Plaid link token", 500);
+    }
+  }
+
+  async getSpendingAdviceFromAI(userId: string) {
+    try {
+      const user = await this.userRepository.getUserById(userId);
+      if (!user) {
+        throw new BaseError("User not found", 404);
+      }
+      const startDate = moment().subtract(30, "days").toISOString();
+      const endDate = moment().toISOString();
+      const transactions =
+        await this.transactionRepository.getTransactionByDateRange(
+          user._id as string,
+          startDate,
+          endDate
+        );
+      if (transactions.length === 0) {
+        return "No transactions found for the past 30 days.";
+      }
+      const advice = await getSpendingAdvice(transactions);
+      return advice;
+    } catch (error) {
+      console.error("Error in getSpendingAdviceFromAI:", error);
+      throw new BaseError("Failed to get spending advice", 500);
     }
   }
 
