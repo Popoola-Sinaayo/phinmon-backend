@@ -37,6 +37,12 @@ const config = () => {
     );
     throw new Error("PLAID_CLIENT_SECRET must be provided");
   }
+  if (process.env.OPENAI_API_KEY === undefined) {
+    console.error(
+      "OPENAI_API_KEY is not defined in the environment variables."
+    );
+    throw new Error("OPENAI_API_KEY must be provided");
+  }
   return {
     MONGO_URI: process.env.MONGO_URI,
     PORT: process.env.PORT,
@@ -45,6 +51,7 @@ const config = () => {
     MONO_SEC_KEY: process.env.MONO_SEC_KEY,
     PLAID_CLIENT_ID: process.env.PLAID_CLIENT_ID,
     PLAID_CLIENT_SECRET: process.env.PLAID_CLIENT_SECRET,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   };
 };
 
