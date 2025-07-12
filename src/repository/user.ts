@@ -1,9 +1,16 @@
 import User, { IUser } from "../model/user";
-
+import { categoryKeywords } from "../utils/categoryKeywords";
 
 class UserRepository {
   async createUser(userData: Partial<IUser>) {
-    const user = await User.create(userData);
+    const user = await User.create({
+      ...userData,
+      preferences: {
+        nottifications: "all",
+        notificationSetAmount: 0,
+        userMappedKeyWords: categoryKeywords,
+      },
+    });
     return user;
   }
 

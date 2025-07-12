@@ -11,6 +11,10 @@ import { CountryCode, Products } from "plaid";
 import TransactionRepository from "../repository/transaction";
 import moment from "moment";
 import { getSpendingAdvice } from "../utils/aiAnalyzer";
+import {
+  categorizeTransaction,
+  categoryKeywords,
+} from "../utils/categoryKeywords";
 
 class UserService {
   private userRepository: UserRepository;
@@ -299,7 +303,10 @@ class UserService {
             amount: transaction.amount,
             currency: transaction.currency,
             description: transaction.narration,
-            category: transaction.category,
+            category: categorizeTransaction(
+              user.preferences.userMappedKeyWords || categoryKeywords,
+              transaction.narration
+            ),
             date: transaction.date,
           });
         } else {
@@ -335,6 +342,20 @@ class UserService {
     } catch (error) {
       console.error("Error in getAllTransactions:", error);
       throw new BaseError("Failed to fetch all transactions", 500);
+    }
+  }
+
+  async updateTransaction(transactionId: string, updateData: any) {
+    try {
+      const transaction =
+        await this.transactionRepository.updateTransactionByTransactionId(
+          transactionId,
+          updateData
+        );
+      return transaction;
+    } catch (error) {
+      console.error("Error in updateTransaction:", error);
+      throw new BaseError("Failed to update transaction", 500);
     }
   }
 

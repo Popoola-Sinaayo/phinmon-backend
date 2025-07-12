@@ -195,9 +195,28 @@ export const getTodaysTransactions: (
   next: NextFunction
 ) => void = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const transactions = await userService.getCurrentDayTransactions(req.user.id);
+    const transactions = await userService.getCurrentDayTransactions(
+      req.user.id
+    );
     return res.status(200).json(constructResponseBody(transactions));
   } catch (error) {
     next(error);
   }
-}
+};
+
+export const updateTransaction: (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => void = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { transactionId, updateData } = req.body;
+    const updatedTransaction = await userService.updateTransaction(
+      transactionId,
+      updateData
+    );
+    return res.status(200).json(constructResponseBody(updatedTransaction));
+  } catch (error) {
+    next(error);
+  }
+};

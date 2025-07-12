@@ -11,6 +11,7 @@ import {
   syncTransactionByDate,
   updateOnboardingInformation,
   updatePushNotificationToken,
+  updateTransaction,
   verifyOtp,
 } from "../controller/user";
 import { authenticateUserToken } from "../middlewares/authenticateUser";
@@ -35,6 +36,7 @@ router.post(
   authenticateUserToken,
   updatePushNotificationToken
 );
+router.post("/transaction/update", authenticateUserToken, updateTransaction);
 router.get("/transaction/today", authenticateUserToken, getTodaysTransactions);
 router.post("/webhook", processWebhookEvent);
 

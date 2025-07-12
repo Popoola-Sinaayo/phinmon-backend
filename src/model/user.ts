@@ -13,6 +13,22 @@ export interface IUser extends mongoose.Document {
   preferences: {
     notifications: "all" | "over_set_amount" | "balance_below_amount" | "none";
     notificationSetAmount: number;
+    userMappedKeyWords: {
+      food: string[];
+      transport: string[];
+      shopping: string[];
+      bills: string[];
+      entertainment: string[];
+      savings: string[];
+      health: string[];
+      education: string[];
+      subscriptions: string[];
+      gifting: string[];
+      home: string[];
+      income: string[];
+      bank_charges: string[];
+      donations: string[];
+    };
   };
 }
 
@@ -33,6 +49,22 @@ const userSchema = new mongoose.Schema<IUser>(
         enum: ["all", "over_set_amount", "balance_below_amount", "none"],
       },
       notificationSetAmount: { type: Number, default: 0 },
+      userMappedKeyWords: {
+        food: [String],
+        transport: [String],
+        shopping: [String],
+        bills: [String],
+        entertainment: [String],
+        savings: [String],
+        health: [String],
+        education: [String],
+        subscriptions: [String],
+        gifting: [String],
+        home: [String],
+        income: [String],
+        bank_charges: [String],
+        donations: [String],
+      },
     },
   },
   {
