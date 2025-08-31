@@ -156,9 +156,11 @@ class UserService {
         code,
       });
       await this.userRepository.updateUser(userId, {
-        monoAccountId: response.data.id,
+        // monoAccountId: response.data.id,
+    
+         $addToSet: { monoAccountId: response.data.id } ,
         isOnboarded: true,
-      });
+      } as any);
       return response.data;
     } catch (error) {
       console.error("Error in exchangeCodeForToken:", error);
