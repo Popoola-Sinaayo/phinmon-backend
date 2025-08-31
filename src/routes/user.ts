@@ -4,6 +4,7 @@ import {
   getAllInstitution,
   getAllTransactions,
   getTodaysTransactions,
+  getUserDetails,
   initiateConnection,
   initiatePlaidLinkToken,
   processWebhookEvent,
@@ -39,6 +40,7 @@ router.post(
 router.post("/transaction/update", authenticateUserToken, updateTransaction);
 router.get("/transaction/today", authenticateUserToken, getTodaysTransactions);
 router.post("/webhook", processWebhookEvent);
+router.get("/me", authenticateUserToken, getUserDetails);
 
 
 export default router;

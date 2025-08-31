@@ -474,6 +474,19 @@ class UserService {
       throw new BaseError("Failed to handle webhook event", 500);
     }
   }
+
+  async getUserDetails(userId: string) {
+    try {
+      const user = await this.userRepository.getUserById(userId);
+      if (!user) {
+        throw new BaseError("User not found", 404);
+      }
+      return user;
+    } catch (error) {
+      console.error("Error in getUserDetails:", error);
+      throw new BaseError("Failed to get user details", 500);
+    }
+  }
 }
 
 export default UserService;

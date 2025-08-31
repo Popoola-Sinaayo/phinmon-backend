@@ -220,3 +220,17 @@ export const updateTransaction: (
     next(error);
   }
 };
+
+
+export const getUserDetails: (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => void = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userDetails = await userService.getUserDetails(req.user.id);
+    return res.status(200).json(constructResponseBody(userDetails));
+  } catch (error) {
+    next(error);
+  }
+};
