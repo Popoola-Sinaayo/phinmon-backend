@@ -7,8 +7,12 @@ export const monoInstance = axios.create({
   headers: {
     "content-type": "application/json",
     "mono-sec-key": config().MONO_SEC_KEY,
+    
   },
 });
+
+
+console.log(config().MONO_SEC_KEY);
 
 
 const plaidConfig = new Configuration({

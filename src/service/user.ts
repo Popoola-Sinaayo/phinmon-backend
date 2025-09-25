@@ -38,7 +38,7 @@ class UserService {
           email,
         });
         await this.createSendOtp(email);
-        return user;
+        return;
       }
     } catch (error) {
       console.error("Error in authenticateUser:", error);
@@ -93,6 +93,7 @@ class UserService {
         token,
       };
     } catch (error) {
+      console.log(error)
       throw new BaseError("OTP verification failed", 500);
     }
   }
@@ -155,10 +156,11 @@ class UserService {
       const response = await monoInstance.post("/v2/accounts/auth", {
         code,
       });
+      console.log(response.data.id, response.data);
       await this.userRepository.updateUser(userId, {
         // monoAccountId: response.data.id,
     
-         $addToSet: { monoAccountId: response.data.id } ,
+         $addToSet: { monoAccountId: response.data.data.id } ,
         isOnboarded: true,
       } as any);
       return response.data;

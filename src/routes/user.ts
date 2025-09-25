@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   authenticateUser,
+  exchangeCodeForToken,
   getAllInstitution,
   getAllTransactions,
   getTodaysTransactions,
@@ -24,6 +25,7 @@ router.post("/verify-otp", verifyOtp);
 router.post("/onboarding", authenticateUserToken, updateOnboardingInformation);
 router.get("/institutions", authenticateUserToken, getAllInstitution);
 router.post("/initiate-connection", authenticateUserToken, initiateConnection);
+router.post("/monolink-token", authenticateUserToken, exchangeCodeForToken);
 router.get(
   "/initiate-plaid-connection",
   authenticateUserToken,

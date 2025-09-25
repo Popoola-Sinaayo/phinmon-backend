@@ -13,7 +13,7 @@ export const authenticateUser: (req: any, res: any, next: any) => void = async (
 ) => {
   try {
     const { email } = req.body;
-    const user = await userService.authenticateUser(email);
+    const user = await userService.authenticateUser(email?.toLowerCase());
     console.log("User authenticated:", user);
     return res.status(200).json(constructResponseBody(user));
   } catch (error) {
@@ -28,7 +28,7 @@ export const verifyOtp: (req: any, res: any, next: any) => void = async (
 ) => {
   try {
     const { email, otp } = req.body;
-    const user = await userService.verifyOtp(email, otp);
+    const user = await userService.verifyOtp(email?.toLowerCase(), otp);
     return res.status(200).json(constructResponseBody(user));
   } catch (error) {
     next(error);
