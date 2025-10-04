@@ -233,4 +233,18 @@ export const getUserDetails: (
   } catch (error) {
     next(error);
   }
-};
+  };
+
+export const getMySpendingClass: (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => void = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user.id;
+    const userClass = await userService.getMySpendingClass(userId);
+      return res.status(200).json(constructResponseBody(userClass));
+  } catch (error) {
+    next(error); 
+  }
+}

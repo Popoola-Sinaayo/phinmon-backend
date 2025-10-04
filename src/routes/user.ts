@@ -4,6 +4,7 @@ import {
   exchangeCodeForToken,
   getAllInstitution,
   getAllTransactions,
+  getMySpendingClass,
   getTodaysTransactions,
   getUserDetails,
   initiateConnection,
@@ -42,6 +43,7 @@ router.post(
 router.post("/transaction/update", authenticateUserToken, updateTransaction);
 router.get("/transaction/today", authenticateUserToken, getTodaysTransactions);
 router.post("/webhook", processWebhookEvent);
+router.get("/class", authenticateUserToken, getMySpendingClass);
 router.get("/me", authenticateUserToken, getUserDetails);
 
 

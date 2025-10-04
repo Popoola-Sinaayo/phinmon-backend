@@ -16,10 +16,10 @@ export const categoryKeywords: Record<string, string[]> = {
 };
 
 export function categorizeTransaction(categoryKeywords: Record<string, string[]>, description: string): string {
-  const desc = description.toLowerCase();
+  const desc = description?.toLowerCase();
 
   for (const [category, keywords] of Object.entries(categoryKeywords)) {
-    if (keywords.some((keyword) => desc.includes(keyword))) {
+    if (keywords.some((keyword) => desc?.includes(keyword))) {
       return category;
     }
   }

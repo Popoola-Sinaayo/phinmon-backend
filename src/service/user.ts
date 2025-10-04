@@ -93,7 +93,7 @@ class UserService {
         token,
       };
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new BaseError("OTP verification failed", 500);
     }
   }
@@ -159,10 +159,11 @@ class UserService {
       console.log(response.data.id, response.data);
       await this.userRepository.updateUser(userId, {
         // monoAccountId: response.data.id,
-    
-         $addToSet: { monoAccountId: response.data.data.id } ,
+
+        $addToSet: { monoAccountId: response.data.data.id },
         isOnboarded: true,
       } as any);
+      await this.syncTransactions(userId);
       return response.data;
     } catch (error) {
       console.error("Error in exchangeCodeForToken:", error);
@@ -254,46 +255,52 @@ class UserService {
     }
   }
 
-  async syncTransactions(userId: string, startDate: string, endDate: string) {
+  async syncTransactions(userId: string, startDate?: string, endDate?: string) {
     try {
       const user = await this.userRepository.getUserById(userId);
       if (!user) {
         throw new BaseError("User not found", 404);
       }
-      if (!user.monoAccountId) {
+      if (!user.monoAccountId[0]) {
         throw new BaseError("User has not completed onboarding", 400);
       }
-      if (!startDate || !endDate) {
-        throw new BaseError("Start date and end date are required", 400);
-      }
+      // if (!startDate || !endDate) {
+      //   throw new BaseError("Start date and end date are required", 400);
+      // }
       let requestStartDate =
         startDate ?? moment().startOf("month").format("DD-MM-YYYY");
       let requestEndDate = endDate ?? moment().format("DD-MM-YYYY");
       const response = await monoInstance.get(
-        `v2/accounts/${user.monoAccountId}/transactions`,
+        `v2/accounts/${user.monoAccountId[0]}/transactions`,
         {
           params: {
-            // start_date: requestStartDate,
-            // end_date: requestEndDate,
+            start: requestStartDate,
+            end: requestEndDate,
             paginate: false,
           },
         }
       );
-      const balanceResponse = await monoInstance.get(
-        `/v2/accounts/${user.monoAccountId}/balance`
+      const balanceResponseData = await monoInstance.get(
+        `/v2/accounts/${user.monoAccountId[0]}/balance`
       );
+      const balanceResponse = balanceResponseData.data;
       console.log("Balance Response:", balanceResponse.data);
       const newBalance = balanceResponse.data.balance || 0;
       const currentBalance = user.balance || 0;
       const percentChange = (newBalance - currentBalance) / currentBalance;
+      console.log(percentChange, newBalance, currentBalance);
+      const percentChangeValue =
+        isNaN(percentChange) || !isFinite(percentChange) ? 0 : percentChange;
       await this.userRepository.updateUser(userId, {
         balance: balanceResponse.data.balance,
-        ...(currentBalance !== newBalance && {
-          currentPercent: { $inc: percentChange } as any,
-        }),
+        previousBalance: currentBalance,
+        // ...(currentBalance !== newBalance && {
+        //   currentPercent: { $inc: percentChangeValue } as any,
+        // }),
       });
 
-      const transactions = response.data;
+      const transactions = response.data.data;
+      console.log("Fetched Transactions:", transactions);
       for (const transaction of transactions) {
         const existingTransaction =
           await this.transactionRepository.getTransactionByTransactionId(
@@ -312,6 +319,7 @@ class UserService {
               transaction.narration
             ),
             date: transaction.date,
+            monoTransactionId: transaction.id,
           });
         } else {
           await this.transactionRepository.updateTransactionByTransactionId(
@@ -489,6 +497,20 @@ class UserService {
       throw new BaseError("Failed to get user details", 500);
     }
   }
-}
 
+  async getMySpendingClass(userId: string) {
+    try {
+      const user = await this.userRepository.getUserById(userId);
+      if (!user) {
+        throw new BaseError("User not found", 404);
+      }
+      const transaction = await this.transactionRepository.getTransactionForUser(userId)
+      const userClass = analyzeSpending(transaction as any);
+      return userClass;
+    } catch (error) {
+      console.log("Error in getMySpendingClass:", error);
+      throw new BaseError("Failed to get spending class", 500);
+    }
+  }
+}
 export default UserService;
