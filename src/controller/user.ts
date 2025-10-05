@@ -147,7 +147,9 @@ export const syncTransactionByDate: (
   next: NextFunction
 ) => void = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { startDate, endDate } = req.body;
+    // const { startDate, endDate } = req.body;
+    const startDate = req.query.startDate as string;
+    const endDate = req.query.endDate as string;
     const transactions = await userService.syncTransactions(
       req.user.id,
       startDate,

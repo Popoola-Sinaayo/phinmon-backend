@@ -15,6 +15,7 @@ import {
   categorizeTransaction,
   categoryKeywords,
 } from "../utils/categoryKeywords";
+import { analyzeSpending } from "../utils/classificationRaw";
 
 class UserService {
   private userRepository: UserRepository;
@@ -270,6 +271,12 @@ class UserService {
       let requestStartDate =
         startDate ?? moment().startOf("month").format("DD-MM-YYYY");
       let requestEndDate = endDate ?? moment().format("DD-MM-YYYY");
+      console.log(
+        "Syncing transactions from",
+        requestStartDate,
+        "to",
+        requestEndDate
+      );
       const response = await monoInstance.get(
         `v2/accounts/${user.monoAccountId[0]}/transactions`,
         {
@@ -300,39 +307,42 @@ class UserService {
       });
 
       const transactions = response.data.data;
+      console.log(response?.data);
       console.log("Fetched Transactions:", transactions);
-      for (const transaction of transactions) {
-        const existingTransaction =
-          await this.transactionRepository.getTransactionByTransactionId(
-            transaction.id
-          );
-        if (!existingTransaction) {
-          await this.transactionRepository.createTransaction({
-            transactionId: transaction.id,
-            type: transaction.type,
-            userId: user._id as string,
-            amount: transaction.amount,
-            currency: transaction.currency,
-            description: transaction.narration,
-            category: categorizeTransaction(
-              user.preferences.userMappedKeyWords || categoryKeywords,
-              transaction.narration
-            ),
-            date: transaction.date,
-            monoTransactionId: transaction.id,
-          });
-        } else {
-          await this.transactionRepository.updateTransactionByTransactionId(
-            transaction.id,
-            {
+      if (transactions) {
+        for (const transaction of transactions) {
+          const existingTransaction =
+            await this.transactionRepository.getTransactionByTransactionId(
+              transaction.id
+            );
+          if (!existingTransaction) {
+            await this.transactionRepository.createTransaction({
+              transactionId: transaction.id,
               type: transaction.type,
+              userId: user._id as string,
               amount: transaction.amount,
               currency: transaction.currency,
               description: transaction.narration,
-              category: transaction.category,
+              category: categorizeTransaction(
+                user.preferences.userMappedKeyWords || categoryKeywords,
+                transaction.narration
+              ),
               date: transaction.date,
-            }
-          );
+              monoTransactionId: transaction.id,
+            });
+          } else {
+            await this.transactionRepository.updateTransactionByTransactionId(
+              transaction.id,
+              {
+                type: transaction.type,
+                amount: transaction.amount,
+                currency: transaction.currency,
+                description: transaction.narration,
+                category: transaction.category,
+                date: transaction.date,
+              }
+            );
+          }
         }
       }
       const userTransactions =
@@ -504,7 +514,8 @@ class UserService {
       if (!user) {
         throw new BaseError("User not found", 404);
       }
-      const transaction = await this.transactionRepository.getTransactionForUser(userId)
+      const transaction =
+        await this.transactionRepository.getTransactionForUser(userId);
       const userClass = analyzeSpending(transaction as any);
       return userClass;
     } catch (error) {

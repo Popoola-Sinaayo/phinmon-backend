@@ -6,7 +6,7 @@ type Transaction = {
   type: "credit" | "debit";
 };
 
-function analyzeSpending(transactions: Transaction[]) {
+export function analyzeSpending(transactions: Transaction[]) {
   const totalSpent = transactions
     .filter((txn) => txn.type === "debit")
     .reduce((sum, txn) => sum + txn.amount, 0);
