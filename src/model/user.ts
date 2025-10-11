@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema<IUser>(
     phoneNumber: { type: String },
     isOnboarded: { type: Boolean },
     country: { type: String },
-    monoAccount: [{ id: { type: String }, instituion: String }],
+    monoAccount: [{ id: { type: String }, institution: String }],
     balance: { type: Number, default: 0 },
     previousBalance: { type: Number, default: 0 },
     currentPercent: { type: Number, default: 0 },
