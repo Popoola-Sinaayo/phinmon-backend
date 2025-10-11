@@ -5,7 +5,7 @@ export interface IUser extends mongoose.Document {
   fullName: string;
   phoneNumber: string;
   country: string;
-  monoAccountId: string[];
+  monoAccount: {id: string, instituiton: string}[];
   balance: number;
   previousBalance: number;
   currentPercent: number;
@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema<IUser>(
     phoneNumber: { type: String },
     isOnboarded: { type: Boolean },
     country: { type: String },
-    monoAccountId: [{ type: String }],
+    monoAccount: [{ id: { type: String }, instituion: String }],
     balance: { type: Number, default: 0 },
     previousBalance: { type: Number, default: 0 },
     currentPercent: { type: Number, default: 0 },

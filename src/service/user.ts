@@ -148,7 +148,11 @@ class UserService {
     }
   }
 
-  async exchangeCodeForToken(userId: string, code: string) {
+  async exchangeCodeForToken(
+    userId: string,
+    code: string,
+    institution: string
+  ) {
     try {
       const user = await this.userRepository.getUserById(userId);
       if (!user) {
@@ -161,7 +165,7 @@ class UserService {
       await this.userRepository.updateUser(userId, {
         // monoAccountId: response.data.id,
 
-        $addToSet: { monoAccountId: response.data.data.id },
+        $addToSet: { monoAccount: { id: response.data.data.id, institution } },
         isOnboarded: true,
       } as any);
       await this.syncTransactions(userId);
@@ -193,11 +197,12 @@ class UserService {
       if (!user) {
         throw new BaseError("User not found", 404);
       }
-      if (!user.monoAccountId) {
+      if (user.monoAccount.length === 0) {
         throw new BaseError("User has not completed onboarding", 400);
       }
+      const monoAccountId = user.monoAccount[0].id
       const response = await monoInstance.get(
-        `v2/accounts/${user.monoAccountId}/transactions`,
+        `v2/accounts/${monoAccountId}/transactions`,
         {
           params: {
             paginate: false,
@@ -262,9 +267,10 @@ class UserService {
       if (!user) {
         throw new BaseError("User not found", 404);
       }
-      if (!user.monoAccountId[0]) {
+      if (user.monoAccount.length === 0) {
         throw new BaseError("User has not completed onboarding", 400);
       }
+
       // if (!startDate || !endDate) {
       //   throw new BaseError("Start date and end date are required", 400);
       // }
@@ -277,8 +283,9 @@ class UserService {
         "to",
         requestEndDate
       );
+      const monoAccountId = user.monoAccount[0].id;
       const response = await monoInstance.get(
-        `v2/accounts/${user.monoAccountId[0]}/transactions`,
+        `v2/accounts/${monoAccountId}/transactions`,
         {
           params: {
             start: requestStartDate,
@@ -288,7 +295,7 @@ class UserService {
         }
       );
       const balanceResponseData = await monoInstance.get(
-        `/v2/accounts/${user.monoAccountId[0]}/balance`
+        `/v2/accounts/${monoAccountId}/balance`
       );
       const balanceResponse = balanceResponseData.data;
       console.log("Balance Response:", balanceResponse.data);
