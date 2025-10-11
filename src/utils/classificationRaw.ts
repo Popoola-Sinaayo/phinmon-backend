@@ -7,18 +7,15 @@ type Transaction = {
 };
 
 export function analyzeSpending(transactions: Transaction[]) {
-  const totalSpent = transactions
-    .filter((txn) => txn.type === "debit")
-    .reduce((sum, txn) => sum + txn.amount, 0);
-
-  const totalReceived = transactions
-    .filter((txn) => txn.type === "credit")
-    .reduce((sum, txn) => sum + txn.amount, 0);
-
   const debitTxns = transactions.filter((txn) => txn.type === "debit");
+  const creditTxns = transactions.filter((txn) => txn.type === "credit");
+
+  const totalSpent = debitTxns.reduce((sum, txn) => sum + txn.amount, 0);
+  const totalReceived = creditTxns.reduce((sum, txn) => sum + txn.amount, 0);
   const txnCount = debitTxns.length;
   const averageSpend = txnCount > 0 ? totalSpent / txnCount : 0;
 
+  // --- Category groupings ---
   const weekendSpending = debitTxns
     .filter((txn) => {
       const day = new Date(txn.date).getDay();
@@ -27,30 +24,32 @@ export function analyzeSpending(transactions: Transaction[]) {
     .reduce((sum, txn) => sum + txn.amount, 0);
 
   const foodSpending = debitTxns
-    .filter((txn) => /food|restaurant|eat|snack|drink/i.test(txn.description))
+    .filter(
+      (txn) => txn.category === "food" || txn.category === "entertainment"
+    )
     .reduce((sum, txn) => sum + txn.amount, 0);
 
   const essentialSpending = debitTxns
     .filter((txn) =>
-      /rent|bill|electric|water|transport|gas|school|health/i.test(
-        txn.description
+      ["bills", "transport", "health", "education", "home"].includes(
+        txn.category
       )
     )
     .reduce((sum, txn) => sum + txn.amount, 0);
 
   const gadgetSpending = debitTxns
-    .filter((txn) =>
-      /phone|laptop|gadget|tech|electronics/i.test(txn.description)
-    )
+    .filter((txn) => ["shopping", "tech", "electronics"].includes(txn.category))
     .reduce((sum, txn) => sum + txn.amount, 0);
 
   const luxurySpending = debitTxns
-    .filter((txn) =>
-      /luxury|jewelry|designer|fashion|gold|premium/i.test(txn.description)
-    )
+    .filter((txn) => ["gifting", "luxury", "fashion"].includes(txn.category))
     .reduce((sum, txn) => sum + txn.amount, 0);
 
-  // --- Categories ---
+  const donationSpending = debitTxns
+    .filter((txn) => txn.category === "donations")
+    .reduce((sum, txn) => sum + txn.amount, 0);
+
+  // --- Classification logic ---
   if (weekendSpending / totalSpent > 0.5) {
     return {
       type: "Weekend Warrior 🎉",
@@ -81,7 +80,7 @@ export function analyzeSpending(transactions: Transaction[]) {
       desc: "Peaceful and balanced. You stick to essentials and avoid money stress.",
     };
   }
-  if (averageSpend > 30000 && debitTxns.length < 5) {
+  if (averageSpend > 30000 && txnCount < 5) {
     return {
       type: "Cash Splash King/Queen 👑",
       desc: "Big moves only. You make fewer transactions, but when you do, it’s major.",
@@ -97,6 +96,12 @@ export function analyzeSpending(transactions: Transaction[]) {
     return {
       type: "Luxury Lover 💎",
       desc: "Only the finer things. You’d rather spend more for premium everything.",
+    };
+  }
+  if (donationSpending / totalSpent > 0.2) {
+    return {
+      type: "Kind Giver ❤️",
+      desc: "You put others first — generosity is your default spending mode.",
     };
   }
   if (txnCount > 20 && averageSpend < 2000) {

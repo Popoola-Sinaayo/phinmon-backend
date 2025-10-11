@@ -89,8 +89,8 @@ export const exchangeCodeForToken: (
   next: NextFunction
 ) => void = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { code, instituion } = req.body;
-    const tokenData = await userService.exchangeCodeForToken(req.user.id, code, instituion);
+    const { code, institution } = req.body;
+    const tokenData = await userService.exchangeCodeForToken(req.user.id, code, institution);
     return res.status(200).json(constructResponseBody(tokenData));
   } catch (error) {
     next(error);
