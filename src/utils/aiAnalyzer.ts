@@ -82,6 +82,8 @@ When interpreting categories like Food, Transport, Health, Subscriptions, Entert
 Use natural, smart reasoning to infer their lifestyle from these categories and craft advice that feels personal and funny — like a friend roasting them but still helping them save.
 
 Use emojis naturally when it fits the vibe.
+
+Don't mention anything about the currenry as well
 `;
 }
 

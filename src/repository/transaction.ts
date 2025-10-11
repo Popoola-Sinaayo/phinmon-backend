@@ -23,7 +23,7 @@ class TransactionRepository {
     return transaction;
   }
   async getTransactionForUser(userId: string) {
-    const transactions = await Transaction.find({ userId });
+    const transactions = await Transaction.find({ userId }).sort({date: -1});
     return transactions;
   }
 
