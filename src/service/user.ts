@@ -200,7 +200,7 @@ class UserService {
       if (user.monoAccount.length === 0) {
         throw new BaseError("User has not completed onboarding", 400);
       }
-      const monoAccountId = user.monoAccount[0].id
+      const monoAccountId = user.monoAccount[0].id;
       const response = await monoInstance.get(
         `v2/accounts/${monoAccountId}/transactions`,
         {
@@ -530,6 +530,98 @@ class UserService {
     } catch (error) {
       console.log("Error in getMySpendingClass:", error);
       throw new BaseError("Failed to get spending class", 500);
+    }
+  }
+
+  async updateNotificationPreferences(
+    userId: string,
+    preferencesData: {
+      notifications?:
+        | "all"
+        | "over_set_amount"
+        | "balance_below_amount"
+        | "none";
+      notificationSetAmount?: number;
+      userMappedKeyWords?: {
+        food?: string[];
+        transport?: string[];
+        shopping?: string[];
+        bills?: string[];
+        entertainment?: string[];
+        savings?: string[];
+        health?: string[];
+        education?: string[];
+        subscriptions?: string[];
+        gifting?: string[];
+        home?: string[];
+        income?: string[];
+        bank_charges?: string[];
+        donations?: string[];
+      };
+    }
+  ) {
+    try {
+      const user = await this.userRepository.getUserById(userId);
+      if (!user) {
+        throw new BaseError("User not found", 404);
+      }
+
+      // Validate notification type if provided
+      if (preferencesData.notifications) {
+        const validNotifications = [
+          "all",
+          "over_set_amount",
+          "balance_below_amount",
+          "none",
+        ];
+        if (!validNotifications.includes(preferencesData.notifications)) {
+          throw new BaseError("Invalid notification type", 400);
+        }
+      }
+
+      // Validate notificationSetAmount if provided
+      if (preferencesData.notificationSetAmount !== undefined) {
+        if (preferencesData.notificationSetAmount < 0) {
+          throw new BaseError(
+            "Notification set amount cannot be negative",
+            400
+          );
+        }
+      }
+
+      // Prepare update data
+      const updateData: any = {};
+
+      if (preferencesData.notifications !== undefined) {
+        updateData["preferences.notifications"] = preferencesData.notifications;
+      }
+
+      if (preferencesData.notificationSetAmount !== undefined) {
+        updateData["preferences.notificationSetAmount"] =
+          preferencesData.notificationSetAmount;
+      }
+
+      // Handle userMappedKeyWords updates
+      if (preferencesData.userMappedKeyWords) {
+        Object.keys(preferencesData.userMappedKeyWords).forEach((key) => {
+          const keywordValue =
+            preferencesData.userMappedKeyWords![
+              key as keyof typeof preferencesData.userMappedKeyWords
+            ];
+          if (keywordValue) {
+            updateData[`preferences.userMappedKeyWords.${key}`] = keywordValue;
+          }
+        });
+      }
+
+      const updatedUser = await this.userRepository.updateUser(
+        userId,
+        updateData
+      );
+      return updatedUser;
+    } catch (error) {
+      console.error("Error in updateNotificationPreferences:", error);
+      throw new BaseError("Failed to update notification preferences", 500);
     }
   }
 }

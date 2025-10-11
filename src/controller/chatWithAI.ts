@@ -24,3 +24,36 @@ export const chatWithAI: (
     next(error);
   }
 };
+
+export const getChatHistory: (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => void = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const limit = req.query.limit
+      ? parseInt(req.query.limit as string)
+      : undefined;
+    const chatHistory = await chatWithAIService.getChatHistory(
+      req.user.id,
+      limit
+    );
+    return res.status(200).json(constructResponseBody(chatHistory));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteChat: (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => void = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { chatId } = req.params;
+    const deletedChat = await chatWithAIService.deleteChat(req.user.id, chatId);
+    return res.status(200).json(constructResponseBody(deletedChat));
+  } catch (error) {
+    next(error);
+  }
+};

@@ -13,6 +13,7 @@ import {
   syncRealTimeTransactions,
   syncTransactionByDate,
   updateOnboardingInformation,
+  updateNotificationPreferences,
   updatePushNotificationToken,
   updateTransaction,
   verifyOtp,
@@ -45,6 +46,10 @@ router.get("/transaction/today", authenticateUserToken, getTodaysTransactions);
 router.post("/webhook", processWebhookEvent);
 router.get("/class", authenticateUserToken, getMySpendingClass);
 router.get("/me", authenticateUserToken, getUserDetails);
-
+router.put(
+  "/preferences/notifications",
+  authenticateUserToken,
+  updateNotificationPreferences
+);
 
 export default router;
