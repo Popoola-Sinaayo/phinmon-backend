@@ -6,7 +6,7 @@ class UserRepository {
     const user = await User.create({
       ...userData,
       preferences: {
-        nottifications: "all",
+        notifications: "all",
         notificationSetAmount: 0,
         userMappedKeyWords: categoryKeywords,
       },

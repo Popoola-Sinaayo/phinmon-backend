@@ -43,6 +43,14 @@ const config = () => {
     );
     throw new Error("OPENAI_API_KEY must be provided");
   }
+  if (process.env.EMAIL_USER === undefined) {
+    console.error("EMAIL_USER is not defined in the environment variables.");
+    throw new Error("EMAIL_USER must be provided");
+  }
+  if (process.env.EMAIL_PASS === undefined) {
+    console.error("EMAIL_PASS is not defined in the environment variables.");
+    throw new Error("EMAIL_PASS must be provided");
+  }
   return {
     MONGO_URI: process.env.MONGO_URI,
     PORT: process.env.PORT,
@@ -52,6 +60,8 @@ const config = () => {
     PLAID_CLIENT_ID: process.env.PLAID_CLIENT_ID,
     PLAID_CLIENT_SECRET: process.env.PLAID_CLIENT_SECRET,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    EMAIL_USER: process.env.EMAIL_USER,
+    EMAIL_PASS: process.env.EMAIL_PASS,
   };
 };
 
