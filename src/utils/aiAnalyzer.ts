@@ -12,9 +12,9 @@ const openai = new OpenAI({
 });
 
 export async function getSpendingAdvice(
-  transactions: { amount: number; category: string; date: Date }[]
+  transactions: { amount: number; category: string; date: Date, type: string }[]
 ) {
-  console.log(transactions);
+  // console.log(transactions);
   const prompt = generatePromptShortVersion(transactions);
 
   // THIS IS FOR OPEN AI BUT I AM USING GEMENI FOR NOW
@@ -46,10 +46,10 @@ export async function getSpendingAdvice(
 }
 
 function generatePromptDetailed(
-  transactions: { amount: number; category: string; date: Date }[]
+  transactions: { amount: number; category: string; date: Date, type: string }[]
 ) {
   const items = transactions
-    .map((txn) => `- ₦${txn.amount} on ${txn.category} (${txn.date})`)
+    .map((txn) => `- ₦${txn.amount} on ${txn.category} type ${txn.type} (${txn.date})`)
     .join("\n");
 
   return `
@@ -62,10 +62,10 @@ Give a detailed, witty, Gen Z-style advice tips that help them manage money bett
 }
 
 function generatePromptShortVersion(
-  transactions: { amount: number; category: string; date: Date }[]
+  transactions: { amount: number; category: string; date: Date, type: string }[]
 ) {
   const items = transactions
-    .map((txn) => `- ₦${txn.amount} on ${txn.category} (${txn.date})`)
+    .map((txn) => `- ₦${txn.amount} on ${txn.category} type ${txn.type} (${txn.date})`)
     .join("\n");
 
   return `
@@ -88,11 +88,11 @@ Don't mention anything about the currenry as well
 }
 
 function chatWithAIPrompt(
-  transactions: { amount: number; category: string; date: Date }[],
+  transactions: { amount: number; category: string; date: Date, type: string }[],
   question: string
 ) {
   const items = transactions
-    .map((txn) => `- ₦${txn.amount} on ${txn.category} (${txn.date})`)
+    .map((txn) => `- ₦${txn.amount} on ${txn.category} type ${txn.type} (${txn.date})`)
     .join("\n");
   return `
 
