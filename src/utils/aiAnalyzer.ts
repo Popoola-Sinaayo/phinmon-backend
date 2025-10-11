@@ -120,6 +120,8 @@ You can use emojis if they fit the tone.
 
 Finally if the question is not related to their finances answer that they are straying away and should keep things in the context of the finances
  Also reply with only text do not use any text formatting
+
+ At the end of you response return suggested things that they can ask for follow up
 `;
 }
 
