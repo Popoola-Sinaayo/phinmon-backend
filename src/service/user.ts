@@ -186,8 +186,7 @@ class UserService {
         $pull: { monoAccount: { id: monoAccountId } },
       } as any);
       return updatedUser;
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Error in disconnectAccount:", error);
       throw new BaseError("Failed to disconnect account", 500);
     }
@@ -640,6 +639,35 @@ class UserService {
     } catch (error) {
       console.error("Error in updateNotificationPreferences:", error);
       throw new BaseError("Failed to update notification preferences", 500);
+    }
+  }
+
+  async getTransactionsByDate(userId: string, startDate: string, endDate: string) {
+    try {
+      const user = await this.userRepository.getUserById(userId);
+      if (!user) {
+        throw new BaseError("User not found", 404);
+      }
+
+      // Validate date format
+      // const dateObj = new Date(date);
+      // if (isNaN(dateObj.getTime())) {
+      //   throw new BaseError(
+      //     "Invalid date format. Please use YYYY-MM-DD format",
+      //     400
+      //   );
+      // }
+
+      const transactions =
+        await this.transactionRepository.getTransactionByDateRange(
+          userId,
+          startDate,
+          endDate
+        );
+      return transactions;
+    } catch (error) {
+      console.error("Error in getTransactionsByDate:", error);
+      throw new BaseError("Failed to get transactions by date", 500);
     }
   }
 }

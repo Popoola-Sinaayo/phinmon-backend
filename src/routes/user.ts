@@ -6,6 +6,7 @@ import {
   getAllTransactions,
   getMySpendingClass,
   getTodaysTransactions,
+  getTransactionsByDate,
   getUserDetails,
   initiateConnection,
   initiatePlaidLinkToken,
@@ -45,6 +46,7 @@ router.post(
 );
 router.post("/transaction/update", authenticateUserToken, updateTransaction);
 router.get("/transaction/today", authenticateUserToken, getTodaysTransactions);
+router.get("/transaction/date", authenticateUserToken, getTransactionsByDate);
 router.post("/webhook", processWebhookEvent);
 router.get("/class", authenticateUserToken, getMySpendingClass);
 router.get("/me", authenticateUserToken, getUserDetails);

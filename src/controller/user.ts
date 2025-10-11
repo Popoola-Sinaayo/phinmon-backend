@@ -281,3 +281,28 @@ export const updateNotificationPreferences: (
     next(error);
   }
 };
+
+export const getTransactionsByDate: (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => void = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    // if (!date || typeof date !== "string") {
+    //   return res
+    //     .status(400)
+    //     .json(constructResponseBody(null, "Date parameter is required", false));
+    // }
+
+    const transactions = await userService.getTransactionsByDate(
+      req.user.id,
+      startDate as string,
+      endDate as string
+    );
+    return res.status(200).json(constructResponseBody(transactions));
+  } catch (error) {
+    next(error);
+  }
+};

@@ -23,7 +23,7 @@ class TransactionRepository {
     return transaction;
   }
   async getTransactionForUser(userId: string) {
-    const transactions = await Transaction.find({ userId }).sort({date: -1});
+    const transactions = await Transaction.find({ userId }).sort({ date: -1 });
     return transactions;
   }
 
@@ -32,10 +32,17 @@ class TransactionRepository {
     startDate: string,
     endDate: string
   ) {
+    const startOfDay = new Date(startDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(endDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
     const transactions = await Transaction.find({
       userId,
-      date: { $gte: startDate, $lte: endDate },
-    });
+      date: { $gte: startOfDay, $lte: endOfDay },
+    }).sort({ date: -1 });
+    
     return transactions;
   }
 }
