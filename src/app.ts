@@ -4,6 +4,7 @@ import bodyParser from "body-parser";
 import helmet from "helmet";
 import cors from "cors";
 import userRoutes from "./routes/user";
+import chatWithAIRoutes from "./routes/chatWithAI";
 import { connectToDB } from "./db";
 import config from "./config";
 import errHandler from "./errHandler";
@@ -26,6 +27,7 @@ app.use(helmet());
 app.use(cors());
 
 app.use("/api/v1/user", userRoutes);
+app.use("/api/v1/ai", chatWithAIRoutes);
 app.use(errHandler as any);
 
 app.use("*splat", (req: Request, res: Response) => {

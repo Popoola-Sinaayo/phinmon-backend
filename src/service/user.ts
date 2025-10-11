@@ -524,7 +524,9 @@ class UserService {
       const transaction =
         await this.transactionRepository.getTransactionForUser(userId);
       const userClass = analyzeSpending(transaction as any);
-      return userClass;
+      const spendingAdvice = await getSpendingAdvice(transaction);
+      // console.log(spendingAdvice);
+      return { class: userClass, advice: spendingAdvice };
     } catch (error) {
       console.log("Error in getMySpendingClass:", error);
       throw new BaseError("Failed to get spending class", 500);
