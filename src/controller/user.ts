@@ -95,7 +95,21 @@ export const exchangeCodeForToken: (
   } catch (error) {
     next(error);
   }
-};
+  };
+
+  export const disconnectAccount: (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => void = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { monoAccountId } = req.body;
+      const updatedUser = await userService.disconnectAccount(req.user.id, monoAccountId);
+      return res.status(200).json(constructResponseBody(updatedUser));
+    } catch (error) {
+      next(error);
+    }
+  };
 
 export const processWebhookEvent: (
   req: Request,

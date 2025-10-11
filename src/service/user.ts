@@ -176,6 +176,23 @@ class UserService {
     }
   }
 
+  async disconnectAccount(userId: string, monoAccountId: string) {
+    try {
+      const user = await this.userRepository.getUserById(userId);
+      if (!user) {
+        throw new BaseError("User not found", 404);
+      }
+      const updatedUser = await this.userRepository.updateUser(userId, {
+        $pull: { monoAccount: { id: monoAccountId } },
+      } as any);
+      return updatedUser;
+    }
+    catch (error) {
+      console.error("Error in disconnectAccount:", error);
+      throw new BaseError("Failed to disconnect account", 500);
+    }
+  }
+
   async getUserByMonoAccountId(monoAccountId: string) {
     try {
       const user = await this.userRepository.getUserByMonoAccountId(

@@ -17,6 +17,7 @@ import {
   updatePushNotificationToken,
   updateTransaction,
   verifyOtp,
+  disconnectAccount,
 } from "../controller/user";
 import { authenticateUserToken } from "../middlewares/authenticateUser";
 
@@ -28,6 +29,7 @@ router.post("/onboarding", authenticateUserToken, updateOnboardingInformation);
 router.get("/institutions", authenticateUserToken, getAllInstitution);
 router.post("/initiate-connection", authenticateUserToken, initiateConnection);
 router.post("/monolink-token", authenticateUserToken, exchangeCodeForToken);
+router.post("/disconnect-account", authenticateUserToken, disconnectAccount);
 router.get(
   "/initiate-plaid-connection",
   authenticateUserToken,
