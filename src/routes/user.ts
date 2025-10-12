@@ -19,6 +19,7 @@ import {
   updateTransaction,
   verifyOtp,
   disconnectAccount,
+  updateUserPushToken,
 } from "../controller/user";
 import { authenticateUserToken } from "../middlewares/authenticateUser";
 
@@ -55,5 +56,6 @@ router.put(
   authenticateUserToken,
   updateNotificationPreferences
 );
+router.post("/push/token", authenticateUserToken, updateUserPushToken);
 
 export default router;
