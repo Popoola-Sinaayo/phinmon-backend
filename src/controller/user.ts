@@ -305,4 +305,18 @@ export const getTransactionsByDate: (
   } catch (error) {
     next(error);
   }
-};
+  };
+
+  export const updateUserPushToken: (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => void = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { pushToken } = req.body;
+      const updatedUser = await userService.updateUserPushToken(req.user.id, pushToken);
+      return res.status(200).json(constructResponseBody(updatedUser));
+    } catch (error) {
+      next(error);
+    }
+  };

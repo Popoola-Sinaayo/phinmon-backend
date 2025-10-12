@@ -670,5 +670,23 @@ class UserService {
       throw new BaseError("Failed to get transactions by date", 500);
     }
   }
+
+  async updateUserPushToken(userId: string, pushToken: string) {
+    try {
+      const user = await this.userRepository.getUserById(userId);
+      if (!user) {
+        throw new BaseError("User not found", 404);
+      }
+  
+      await this.userRepository.updateUser(userId, {
+        pushToken,
+      });
+      return user;
+    }
+    catch (error) {
+      console.error("Error in updateUserPushToken:", error);
+      throw new BaseError("Failed to update user push token", 500);
+    }
+  }
 }
 export default UserService;
