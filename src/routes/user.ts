@@ -20,6 +20,7 @@ import {
   verifyOtp,
   disconnectAccount,
   updateUserPushToken,
+  syncBalanceFromAllAccounts,
 } from "../controller/user";
 import { authenticateUserToken } from "../middlewares/authenticateUser";
 
@@ -57,5 +58,6 @@ router.put(
   updateNotificationPreferences
 );
 router.post("/push/token", authenticateUserToken, updateUserPushToken);
+router.post("/sync/balance", authenticateUserToken, syncBalanceFromAllAccounts);
 
 export default router;

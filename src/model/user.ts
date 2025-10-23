@@ -5,7 +5,7 @@ export interface IUser extends mongoose.Document {
   fullName: string;
   phoneNumber: string;
   country: string;
-  monoAccount: {id: string, instituiton: string}[];
+  monoAccount: {id: string, institution: string}[];
   balance: number;
   previousBalance: number;
   currentPercent: number;

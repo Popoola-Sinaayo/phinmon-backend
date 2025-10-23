@@ -25,7 +25,7 @@ class UserRepository {
   }
 
   async getUserByMonoAccountId(monoAccountId: string) {
-    const user = await User.findOne({ monoAccountId });
+    const user = await User.findOne({ "monoAccount.id": monoAccountId });
     return user;
   }
   async updateUser(userId: string, updateData: Partial<IUser>) {

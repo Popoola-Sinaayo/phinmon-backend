@@ -216,60 +216,112 @@ class UserService {
       if (user.monoAccount.length === 0) {
         throw new BaseError("User has not completed onboarding", 400);
       }
-      const monoAccountId = user.monoAccount[0].id;
-      const response = await monoInstance.get(
-        `v2/accounts/${monoAccountId}/transactions`,
-        {
-          params: {
-            paginate: false,
-          },
-          headers: {
-            "x-realtime": true,
-          },
-        }
-      );
-      // const balanceResponse = await monoInstance.get()
-      const transactions = response.data;
-      const newTransactions = [];
-      for (const transaction of transactions) {
-        const existingTransaction =
-          await this.transactionRepository.getTransactionByTransactionId(
-            transaction.id
+
+      console.log(`Fetching real-time transactions for ${user.monoAccount.length} accounts`);
+      
+      let totalBalance = 0;
+      const allNewTransactions = [];
+
+      // Process each account
+      for (const account of user.monoAccount) {
+        try {
+          console.log(
+            `Fetching real-time transactions for account: ${account.id} (${account.institution})`
           );
-        if (!existingTransaction) {
-          await this.transactionRepository.createTransaction({
-            transactionId: transaction.id,
-            type: transaction.type,
-            userId: user._id as string,
-            amount: transaction.amount,
-            currency: transaction.currency,
-            description: transaction.narration,
-            category: transaction.category,
-            date: transaction.date,
-          });
-        } else {
-          const newTransaction =
-            await this.transactionRepository.updateTransactionByTransactionId(
-              transaction.id,
-              {
-                type: transaction.type,
-                amount: transaction.amount,
-                currency: transaction.currency,
-                description: transaction.narration,
-                category: transaction.category,
-                date: transaction.date,
-              }
-            );
-          newTransactions.push(newTransaction);
+
+          const response = await monoInstance.get(
+            `v2/accounts/${account.id}/transactions`,
+            {
+              params: {
+                paginate: false,
+              },
+              headers: {
+                "x-realtime": true,
+              },
+            }
+          );
+
+          // Fetch balance for this account
+          const balanceResponseData = await monoInstance.get(
+            `/v2/accounts/${account.id}/balance`
+          );
+          const balanceResponse = balanceResponseData.data;
+          const accountBalance = balanceResponse.data.balance || 0;
+          totalBalance += accountBalance;
+
+          const transactions = response.data;
+          console.log(
+            `Fetched ${
+              transactions?.length || 0
+            } real-time transactions for account ${account.id}`
+          );
+
+          for (const transaction of transactions) {
+            const existingTransaction =
+              await this.transactionRepository.getTransactionByTransactionId(
+                transaction.id
+              );
+            if (!existingTransaction) {
+              const newTransaction =
+                await this.transactionRepository.createTransaction({
+                  transactionId: transaction.id,
+                  type: transaction.type,
+                  userId: user._id as string,
+                  amount: transaction.amount,
+                  currency: transaction.currency,
+                  description: transaction.narration,
+                  category: categorizeTransaction(
+                    user.preferences.userMappedKeyWords || categoryKeywords,
+                    transaction.narration
+                  ),
+                  date: transaction.date,
+                  monoTransactionId: transaction.id,
+                });
+              allNewTransactions.push(newTransaction);
+            } else {
+              const updatedTransaction =
+                await this.transactionRepository.updateTransactionByTransactionId(
+                  transaction.id,
+                  {
+                    type: transaction.type,
+                    amount: transaction.amount,
+                    currency: transaction.currency,
+                    description: transaction.narration,
+                    category: transaction.category,
+                    date: transaction.date,
+                  }
+                );
+              allNewTransactions.push(updatedTransaction);
+            }
+          }
+        } catch (accountError) {
+          console.error(
+            `Error fetching real-time transactions for account ${account.id}:`,
+            accountError
+          );
+          // Continue with other accounts even if one fails
         }
       }
+
+      // Update user's total balance
+      const currentBalance = user.balance || 0;
+      if (totalBalance !== currentBalance) {
+        await this.userRepository.updateUser(userId, {
+          balance: totalBalance,
+          previousBalance: currentBalance,
+        });
+        console.log(
+          `Total balance updated to: ${totalBalance} (was: ${currentBalance})`
+        );
+      }
+
       const userTransactions =
         await this.transactionRepository.getTransactionForUser(
           user._id as string
         );
       return {
         transactions: userTransactions,
-        newTransactions: newTransactions,
+        newTransactions: allNewTransactions,
       };
     } catch (error) {
       console.error("Error in getRealTimeTransactions:", error);
@@ -287,9 +339,6 @@ class UserService {
         throw new BaseError("User has not completed onboarding", 400);
       }
 
-      // if (!startDate || !endDate) {
-      //   throw new BaseError("Start date and end date are required", 400);
-      // }
       let requestStartDate =
         startDate ?? moment().startOf("month").format("DD-MM-YYYY");
       let requestEndDate = endDate ?? moment().format("DD-MM-YYYY");
@@ -297,84 +346,125 @@ class UserService {
         "Syncing transactions from",
         requestStartDate,
         "to",
-        requestEndDate
+        requestEndDate,
+        "for",
+        user.monoAccount.length,
+        "accounts"
       );
-      const monoAccountId = user.monoAccount[0].id;
-      const response = await monoInstance.get(
-        `v2/accounts/${monoAccountId}/transactions`,
-        {
-          params: {
-            start: requestStartDate,
-            end: requestEndDate,
-            paginate: false,
-          },
+
+      let totalBalance = 0;
+      const allTransactions = [];
+
+      // Process each account
+      for (const account of user.monoAccount) {
+        try {
+          console.log(
+            `Syncing account: ${account.id} (${account.institution})`
+          );
+
+          // Fetch transactions for this account
+          const response = await monoInstance.get(
+            `v2/accounts/${account.id}/transactions`,
+            {
+              params: {
+                start: requestStartDate,
+                end: requestEndDate,
+                paginate: false,
+              },
+            }
+          );
+
+          // Fetch balance for this account
+          const balanceResponseData = await monoInstance.get(
+            `/v2/accounts/${account.id}/balance`
+          );
+          const balanceResponse = balanceResponseData.data;
+          console.log(
+            `Balance for account ${account.id}:`,
+            balanceResponse.data
+          );
+
+          const accountBalance = balanceResponse.data.balance || 0;
+          totalBalance += accountBalance;
+
+          const transactions = response.data.data;
+          console.log(
+            `Fetched ${transactions?.length || 0} transactions for account ${
+              account.id
+            }`
+          );
+
+          if (transactions) {
+            for (const transaction of transactions) {
+              const existingTransaction =
+                await this.transactionRepository.getTransactionByTransactionId(
+                  transaction.id
+                );
+              if (!existingTransaction) {
+                const newTransaction =
+                  await this.transactionRepository.createTransaction({
+                    transactionId: transaction.id,
+                    type: transaction.type,
+                    userId: user._id as string,
+                    amount: transaction.amount,
+                    currency: transaction.currency,
+                    description: transaction.narration,
+                    category: categorizeTransaction(
+                      user.preferences.userMappedKeyWords || categoryKeywords,
+                      transaction.narration
+                    ),
+                    date: transaction.date,
+                    monoTransactionId: transaction.id,
+                  });
+                allTransactions.push(newTransaction);
+              } else {
+                const updatedTransaction =
+                  await this.transactionRepository.updateTransactionByTransactionId(
+                    transaction.id,
+                    {
+                      type: transaction.type,
+                      amount: transaction.amount,
+                      currency: transaction.currency,
+                      description: transaction.narration,
+                      category: transaction.category,
+                      date: transaction.date,
+                    }
+                  );
+                allTransactions.push(updatedTransaction);
+              }
+            }
+          }
+        } catch (accountError) {
+          console.error(`Error syncing account ${account.id}:`, accountError);
+          // Continue with other accounts even if one fails
         }
-      );
-      const balanceResponseData = await monoInstance.get(
-        `/v2/accounts/${monoAccountId}/balance`
-      );
-      const balanceResponse = balanceResponseData.data;
-      console.log("Balance Response:", balanceResponse.data);
-      const newBalance = balanceResponse.data.balance || 0;
+      }
+
+      // Update user's total balance
       const currentBalance = user.balance || 0;
-      const percentChange = (newBalance - currentBalance) / currentBalance;
-      console.log(percentChange, newBalance, currentBalance);
+      const percentChange = (totalBalance - currentBalance) / currentBalance;
       const percentChangeValue =
         isNaN(percentChange) || !isFinite(percentChange) ? 0 : percentChange;
+
       await this.userRepository.updateUser(userId, {
-        balance: balanceResponse.data.balance,
+        balance: totalBalance,
         previousBalance: currentBalance,
-        // ...(currentBalance !== newBalance && {
+        // ...(currentBalance !== totalBalance && {
         //   currentPercent: { $inc: percentChangeValue } as any,
         // }),
       });
 
-      const transactions = response.data.data;
-      console.log(response?.data);
-      console.log("Fetched Transactions:", transactions);
-      if (transactions) {
-        for (const transaction of transactions) {
-          const existingTransaction =
-            await this.transactionRepository.getTransactionByTransactionId(
-              transaction.id
-            );
-          if (!existingTransaction) {
-            await this.transactionRepository.createTransaction({
-              transactionId: transaction.id,
-              type: transaction.type,
-              userId: user._id as string,
-              amount: transaction.amount,
-              currency: transaction.currency,
-              description: transaction.narration,
-              category: categorizeTransaction(
-                user.preferences.userMappedKeyWords || categoryKeywords,
-                transaction.narration
-              ),
-              date: transaction.date,
-              monoTransactionId: transaction.id,
-            });
-          } else {
-            await this.transactionRepository.updateTransactionByTransactionId(
-              transaction.id,
-              {
-                type: transaction.type,
-                amount: transaction.amount,
-                currency: transaction.currency,
-                description: transaction.narration,
-                category: transaction.category,
-                date: transaction.date,
-              }
-            );
-          }
-        }
-      }
+      console.log(
+        `Total balance updated to: ${totalBalance} (was: ${currentBalance})`
+      );
+
       const userTransactions =
         await this.transactionRepository.getTransactionForUser(
           user._id as string
         );
       return userTransactions;
     } catch (error) {
-      console.error("Error in getTransactions:", error);
+      console.error("Error in syncTransactions:", error);
       throw new BaseError("Failed to fetch transactions", 500);
     }
   }
@@ -686,6 +776,57 @@ class UserService {
     catch (error) {
       console.error("Error in updateUserPushToken:", error);
       throw new BaseError("Failed to update user push token", 500);
+    }
+  }
+
+  /**
+   * Helper method to get total balance from all user accounts
+   */
+  async getTotalBalanceFromAllAccounts(userId: string): Promise<number> {
+    try {
+      const user = await this.userRepository.getUserById(userId);
+      if (!user || user.monoAccount.length === 0) {
+        return 0;
+      }
+
+      let totalBalance = 0;
+      
+      for (const account of user.monoAccount) {
+        try {
+          const balanceResponseData = await monoInstance.get(
+            `/v2/accounts/${account.id}/balance`
+          );
+          const accountBalance = balanceResponseData.data.data.balance || 0;
+          totalBalance += accountBalance;
+        } catch (accountError) {
+          console.error(`Error fetching balance for account ${account.id}:`, accountError);
+          // Continue with other accounts even if one fails
+        }
+      }
+
+      return totalBalance;
+    } catch (error) {
+      console.error("Error in getTotalBalanceFromAllAccounts:", error);
+      throw new BaseError("Failed to get total balance from all accounts", 500);
+    }
+  }
+
+  /**
+   * Helper method to sync balance from all accounts
+   */
+  async syncBalanceFromAllAccounts(userId: string): Promise<number> {
+    try {
+      const totalBalance = await this.getTotalBalanceFromAllAccounts(userId);
+      
+      await this.userRepository.updateUser(userId, {
+        balance: totalBalance,
+      });
+
+      console.log(`Synced total balance for user ${userId}: ${totalBalance}`);
+      return totalBalance;
+    } catch (error) {
+      console.error("Error in syncBalanceFromAllAccounts:", error);
+      throw new BaseError("Failed to sync balance from all accounts", 500);
     }
   }
 }

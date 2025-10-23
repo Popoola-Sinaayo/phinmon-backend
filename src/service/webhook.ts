@@ -26,20 +26,27 @@ class WebhookService {
             eventData.account._id
           );
           if (user) {
-            const currentBalance = user.balance || 0;
-            const newBalance = eventData.account.balance || 0;
-            const percent = (newBalance - currentBalance) / currentBalance;
-            await this.userRepository.updateUser(user._id as string, {
-              balance: eventData.account.balance,
-              $inc: {
-                currentPercent: percent,
-              } as any,
-            });
+            console.log(
+              `Webhook received for account ${eventData.account._id} (${eventData.account.accountNumber})`
+            );
+
+            // Get real-time transactions for all accounts to ensure we have the latest data
             const transactions = await userService.getRealTimeTransactions(
               user._id as string
             );
 
-            console.log(transactions.newTransactions);
+            console.log(
+              `Found ${
+                transactions.newTransactions?.length || 0
+              } new transactions across all accounts`
+            );
+
+            // Get updated user data to get the new total balance
+            const updatedUser = await this.userRepository.getUserById(
+              user._id as string
+            );
+            const newTotalBalance = updatedUser?.balance || 0;
+            const currentBalance = user.balance || 0;
 
             const todaysTransaction =
               await userService.getCurrentDayTransactions(user._id as string);
@@ -55,9 +62,9 @@ class WebhookService {
               transactions.newTransactions.length > 0
             ) {
               await this.sendPersonalizedNotifications(
-                user,
+                updatedUser,
                 transactions.newTransactions,
-                newBalance,
+                newTotalBalance,
                 currentBalance
               );
             }
@@ -65,7 +72,7 @@ class WebhookService {
             if (user.preferences.notifications === "all") {
               // Send notification to user
               console.log(
-                `Notification sent to ${user.email}: Balance updated to ${eventData.account.balance}`
+                `Notification sent to ${user.email}: Total balance updated to ${newTotalBalance}`
               );
             } else if (
               user.preferences.notifications === "over_set_amount" &&
@@ -73,15 +80,15 @@ class WebhookService {
             ) {
               // Send notification to user
               console.log(
-                `Notification sent to ${user.email}: Balance updated to ${eventData.account.balance} and transaction amount exceeded set limit`
+                `Notification sent to ${user.email}: Total balance updated to ${newTotalBalance} and transaction amount exceeded set limit`
               );
             } else if (
               user.preferences.notifications === "balance_below_amount" &&
-              newBalance < user.preferences.notificationSetAmount
+              newTotalBalance < user.preferences.notificationSetAmount
             ) {
               // Send notification to user
               console.log(
-                `Notification sent to ${user.email}: Balance below set amount of ${user.preferences.notificationSetAmount}`
+                `Notification sent to ${user.email}: Total balance below set amount of ${user.preferences.notificationSetAmount}`
               );
             }
           }

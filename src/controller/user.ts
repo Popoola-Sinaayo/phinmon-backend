@@ -320,3 +320,23 @@ export const getTransactionsByDate: (
       next(error);
     }
   };
+
+export const syncBalanceFromAllAccounts: (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => void = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const totalBalance = await userService.syncBalanceFromAllAccounts(
+      req.user.id
+    );
+    return res.status(200).json(
+      constructResponseBody({
+        totalBalance,
+        message: "Balance synced from all accounts successfully",
+      })
+    );
+  } catch (error) {
+    next(error);
+  }
+};
